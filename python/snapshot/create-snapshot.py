@@ -1,11 +1,9 @@
-import requests
+import json
+
 import boto3
 from datetime import datetime
-import schedule
-import time
 
-# Global Variables
-PROFILE_NAME = 'big-data'
+PROFILE_NAME = 'devops-labs'
 boto3.setup_default_session(profile_name=PROFILE_NAME)
 GLOBAL_REGIONS_DICT: dict = {}
 CURRENT_DATE = datetime.today().strftime("%Y-%m-%d")
@@ -58,43 +56,6 @@ TIME_CURRENT_DATE = datetime.strptime(CURRENT_DATE, "%Y-%m-%d")
 # session = boto3.Session(profile_name=selected_profile)
 # main_client = session.client("ec2", region_name="us-east-1")
 
-
-# block = {
-#     "blocks": [
-#         {
-#             "type": "section",
-#             "text": {
-#                 "type": "mrkdwn",
-#                 "text": "*Do you approve? \n*"
-#             }
-#         },
-#         {
-#             "type": "actions",
-#             "elements": [
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "emoji": True,
-#                         "text": "Approve"
-#                     },
-#                     "style": "primary",
-#                     "value": "click_me_123"
-#                 },
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "emoji": True,
-#                         "text": "Deny"
-#                     },
-#                     "style": "danger",
-#                     "value": "click_me_123"
-#                 }
-#             ]
-#         }
-#     ]
-# }
 
 # _______________________________________________________________
 # Function to call Unused EBS
@@ -152,86 +113,51 @@ def describe_unused_ebs_in_all_regions():
         ebs_list: list = describe_unused_ebs(specific_region)
         if len(ebs_list) > 0:
             all_unused_all_regions[specific_region] = ebs_list
-    return all_unused_all_regions
+    return json.dumps(all_unused_all_regions)
 
 
-# ____________________________________________________________________
-# Functions to call to start Deleting:
-# ____________________________________________________________________
-# volume_dict = {describe_unused_ebs_in_all_regions()}
-def delete_unused_ebs(region):
-    regional_client = boto3.resource("ec2", region_name=region)
-    volumes = []
-    for volume in regional_client.volumes.filter(
-            Filters=[{"Name": "status", "Values": ["available"]}]
-    ):
-        if volume.state == "available":
-            volume_id = volume.id
-            volumes.append(volume_id)
-            volume.delete()
-    return volumes
+print(describe_unused_ebs_in_all_regions())
 
+# volume_dict = json.dumps(describe_unused_ebs_in_all_regions())
+# listToStr = ' '.join([str(elem) for elem in describe_unused_ebs_in_all_regions()])
+# print(listToStr)
 
-# _________________________________________________________________
-# Combine Unused Volumes in All Regions
-# _________________________________________________________________
-def delete_ebs_in_all_regions():
-    all_unused_all_regions = {}
-    region_list: list = available_regions()
-    for specific_region in region_list:
-        print(f"Checking  region {specific_region}")
-        ebs_list: list = delete_unused_ebs(specific_region)
-        if len(ebs_list) > 0:
-            all_unused_all_regions[specific_region] = ebs_list
-    return all_unused_all_regions
+# successful_snapshots = dict()
+# regional_client = boto3.resource("ec2", "us-west-2")
+# for snapshot in volume_dict:
+#     try:
+#         response = regional_client.create_snapshot(
+#             Description=snapshot,
+#             VolumeId=volume_dict[snapshot],
+#             DryRun=False
+#         )
+#         # response is a dictionary containing ResponseMetadata and SnapshotId
+#         status_code = response['ResponseMetadata']['HTTPStatusCode']
+#         snapshot_id = response['SnapshotId']
+#         # check if status_code was 200 or not to ensure the snapshot was created successfully
+#         if status_code == 200:
+#             successful_snapshots[snapshot] = snapshot_id
+#     except Exception as e:
+#         exception_message = "There was error in creating snapshot " + snapshot + \
+#                             " with volume id ", volume_dict[snapshot], " and error is: \n" \
+#                             + str(e)
+# print(successful_snapshots)
 
-
-# __________________________________________________________________
-# Format message
-# __________________________________________________________________
-# accept dictionary that looks like:
-# {"us-east-1": ["vol-123", "vol-456"], "us-west-2": ["vol-789"]}
-# output:
-# """
-# *Unused EBS Volumes*
-# *us-east-1*
-# vol-123
-# vol-456
-# *us-west-2*
-# vol-789
-# """
-def format_message(unused_ebs_dict):
-    message = f"*Unused EBS Volumes in Accounts*\n"
-    for region, volumes in unused_ebs_dict.items():
-        message += f"*{region}*\n"
-        for volume in volumes:
-            message += f"{volume}\n"
-    return message
-
-
-# _________________________________________________________________
-# Call Slack
-# _________________________________________________________________
-def send_message(message):
-    slack_url = "https://hooks.slack.com/services/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"
-    payload_obj1 = '{"text": "%s"}' % message
-    response = requests.post(slack_url, payload_obj1)
-    return response.text
-
-
-# _______________________________________________________________
-# Function to call Schedule
-# _______________________________________________________________
-def schedule_time_list_unused_ebs():
-    message = format_message(describe_unused_ebs_in_all_regions())
-    print(send_message(message=message))
-
-
-schedule_time_list_unused_ebs()
-
-# if __name__ == "__main__":
-#     schedule.every().day.at("11:11").do(schedule_time_list_unused_ebs)
-#
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
+# VOLUME_ID = volume_dict
+# AWS_REGION = "us-west-2"
+# regional_client = boto3.resource("ec2", region_name=AWS_REGION)
+# snapshot = regional_client.create_snapshot(
+#     VolumeId=VOLUME_ID,
+#     TagSpecifications=[
+#         {
+#             'ResourceType': 'snapshot',
+#             'Tags': [
+#                 {
+#                     'Key': 'Name',
+#                     'Value': 'my-snapshot'
+#                 },
+#             ]
+#         },
+#     ]
+# )
+# print(f"Snapshot{snapshot.id} Created for Volume{VOLUME_ID}")

@@ -131,7 +131,7 @@ def format_message(unused_ebs_dict):
 
 
 def send_message(message):
-    slack_url = "https://hooks.slack.com/services/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"
+    slack_url = "https://hooks.slack.com/services/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"
     payload_obj1 = '{"text": "%s"}' % message
     response = requests.post(slack_url, payload_obj1)
     return response.text
@@ -139,7 +139,7 @@ def send_message(message):
 
 def main():
     message = format_message(describe_disks_in_all_regions())
-    # send_message(message=message)
+    send_message(message=message)
 
 
 main()

@@ -3,6 +3,7 @@ import boto3
 from datetime import datetime
 import schedule
 import time
+import botocore.exceptions
 
 # Global Variables
 GLOBAL_REGIONS_DICT: dict = {}
@@ -67,7 +68,57 @@ def describe_unused_ebs(region):
         if volume.state == "available":
             volume_id = volume.id
             volumes.append(volume_id)
+            # if volume.get('Tags') == None:
+            #     regional_client.delete_volume(VolumeId=volume['VolumeId'])
+            #     print("deleted:", volume['VolumeId'])
+            # if not volume.get('Tags') == None:
+            #     if not ((volume.get('Tags')[0]['Key'] == '') and (volume.get('Tags')[0]['Value'] == 'stateful')):
+            #         regional_client.delete_volume(VolumeId=volume['VolumeId'])
+            #         print("deleted:", volume['VolumeId'])
+    volumes_tags = []
+    for volume in regional_client.volumes.filter(
+            Filters=[{'Key': 'Name', 'Value': ['stateful']}]
+    ):
+        volumes_tags.append(volume)
+        tagged_volumes = [volumes for volumes in volumes if volumes in volumes_tags]
+        for volume in tagged_volumes:
+            volume.delete()
     return volumes
+
+
+# def tags(region):
+#     regional_client = boto3.resource("ec2", region_name=region)
+#     volumes_tags = []
+#     for volume in regional_client.volumes.filter(
+#             Filters=[{'Name': 'tag:Name', 'Values': ['stateful']}]
+#     ):
+#         if volume.tag == "stateful":
+#             volume_tag = volume.tag
+#             volumes_tags.append(volume_tag)
+#     return volumes_tags
+
+
+# def lambda_handler(region):
+#     ec2 = boto3.resource("ec2", region_name=region)
+#     volumes = []
+#     try:
+#         for volume in ec2.volumes.filter(
+#                 Filters=[{"Name": "status", "Values": ["available"]}]):
+#             if volume['State'] == 'available':
+#                 volume_id = volume.id
+#                 volumes.append(volume_id)
+#                 if volume.get('Tags') == None:
+#                     ec2.delete_volume(VolumeId=volume['VolumeId'])
+#                     print("deleted:", volume['VolumeId'])
+#                 if not volume.get('Tags') == None:
+#                     if not ((volume.get('Tags')[0]['Key'] == '') and (volume.get('Tags')[0]['Value'] == 'stateful')):
+#                         ec2.delete_volume(VolumeId=volume['VolumeId'])
+#                         print("deleted:", volume['VolumeId'])
+#     except botocore.exceptions.ClientError as e:
+#         error_code = int(e.response['Error']['Code'])
+#         if error_code == 404:
+#             exists = False
+#         return volumes
 
 
 # ________________________________________________________________
@@ -123,63 +174,64 @@ def describe_unused_ebs_in_all_regions():
     return all_unused_all_regions
 
 
-def create_snapshot_for_available_ebs():
-    # create a dictionary of snapshots with their snapshot ids which were created successfully
-    successful_snapshots = dict()
-    volume_dict: dict = describe_unused_ebs_in_all_regions()
-    regional_client = boto3.resource("ec2", "region-name")
-    # iterate through each item in volumes_dict and use key as description of snapshot
-    for snapshot in volume_dict:
-        try:
-            response = regional_client.create_snapshot(
-                Description=snapshot,
-                VolumeId=volume_dict[snapshot],
-                DryRun=False
-            )
-            # response is a dictionary containing ResponseMetadata and SnapshotId
-            status_code = response['ResponseMetadata']['HTTPStatusCode']
-            snapshot_id = response['SnapshotId']
-            # check if status_code was 200 or not to ensure the snapshot was created successfully
-            if status_code == 200:
-                successful_snapshots[snapshot] = snapshot_id
-        except Exception as e:
-            exception_message = "There was error in creating snapshot " + snapshot + \
-                                " with volume id ", str(volume_dict[snapshot]), " and error is: \n" \
-                                + str(e)
-            print(successful_snapshots)
-    # print the snapshots which were created successfully
-    return successful_snapshots
+#
+# def create_snapshot_for_available_ebs():
+#     # create a dictionary of snapshots with their snapshot ids which were created successfully
+#     successful_snapshots = dict()
+#     volume_dict: dict = describe_unused_ebs_in_all_regions()
+#     regional_client = boto3.resource("ec2", "region-name")
+#     # iterate through each item in volumes_dict and use key as description of snapshot
+#     for snapshot in volume_dict:
+#         try:
+#             response = regional_client.create_snapshot(
+#                 Description=snapshot,
+#                 VolumeId=volume_dict[snapshot],
+#                 DryRun=False
+#             )
+#             # response is a dictionary containing ResponseMetadata and SnapshotId
+#             status_code = response['ResponseMetadata']['HTTPStatusCode']
+#             snapshot_id = response['SnapshotId']
+#             # check if status_code was 200 or not to ensure the snapshot was created successfully
+#             if status_code == 200:
+#                 successful_snapshots[snapshot] = snapshot_id
+#         except Exception as e:
+#             exception_message = "There was error in creating snapshot " + snapshot + \
+#                                 " with volume id ", str(volume_dict[snapshot]), " and error is: \n" \
+#                                 + str(e)
+#             print(successful_snapshots)
+#     # print the snapshots which were created successfully
+#     return successful_snapshots
 
 
 # ____________________________________________________________________
 # Functions to call to start Deleting:
 # ____________________________________________________________________
 # volume_dict = {describe_unused_ebs_in_all_regions()}
-def delete_unused_ebs(region):
-    regional_client = boto3.resource("ec2", region_name=region)
-    volumes = []
-    for volume in regional_client.volumes.filter(
-            Filters=[{"Name": "status", "Values": ["available"]}]
-    ):
-        if volume.state == "available":
-            volume_id = volume.id
-            volumes.append(volume_id)
-            volume.delete()
-    return volumes
+# def delete_unused_ebs(region):
+#     regional_client = boto3.resource("ec2", region_name=region)
+#     volumes = []
+#     for volume in regional_client.volumes.filter(
+#             Filters=[{"Name": "status", "Values": ["available"]}]
+#     ):
+#         if volume.state == "available":
+#             volume_id = volume.id
+#             volumes.append(volume_id)
+#             volume.delete()
+#     return volumes
 
 
 # _________________________________________________________________
 # Delete Combine Unused Volumes in All Regions
 # _________________________________________________________________
-def delete_ebs_in_all_regions():
-    all_unused_all_regions = {}
-    region_list: list = available_regions()
-    for specific_region in region_list:
-        print(f"Checking  region {specific_region}")
-        ebs_list: list = delete_unused_ebs(specific_region)
-        if len(ebs_list) > 0:
-            all_unused_all_regions[specific_region] = ebs_list
-    return all_unused_all_regions
+# def delete_ebs_in_all_regions():
+#     all_unused_all_regions = {}
+#     region_list: list = available_regions()
+#     for specific_region in region_list:
+#         print(f"Checking  region {specific_region}")
+#         ebs_list: list = delete_unused_ebs(specific_region)
+#         if len(ebs_list) > 0:
+#             all_unused_all_regions[specific_region] = ebs_list
+#     return all_unused_all_regions
 
 
 # __________________________________________________________________

@@ -57,40 +57,6 @@ def get_user_input(options):
     return final_selection
 
 
-# main_client = session.client("ec2", region_name="us-east-1")
-
-
-# block = {
-#     "blocks": [
-#         {
-#             "type": "actions",
-#             "elements": [
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "emoji": True,
-#                         "text": "Approve"
-#                     },
-#                     "style": "primary",
-#                     "value": "click_me_123"
-#                 },
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "emoji": True,
-#                         "text": "Deny"
-#                     },
-#                     "style": "danger",
-#                     "value": "click_me_123"
-#                 }
-#             ]
-#         }
-#     ]
-# }
-
-
 # _______________________________________________________________
 # Function to call Unused EBS
 # _______________________________________________________________
@@ -148,13 +114,7 @@ def nice_format_message(unused_ebs_dictionary):
 # _______________________________________________________________
 def describe_unused_ebs_in_all_regions():
     all_unused_all_regions = {}
-    # profile_list: list = list_of_profiles()
     region_list: list = available_regions()
-    # for specific_profile in profile_list:
-    #     print(f"profile name: *{specific_profile}*")
-    #     region_in_profile: list = available_regions()
-    #     if len(region_in_profile) > 0:
-    #         all_unused_all_regions[specific_profile] = region_in_profile
     for specific_region in region_list:
         print(f"Checking  region {specific_region}")
         ebs_list: list = describe_unused_ebs(specific_region)
@@ -237,7 +197,7 @@ def format_message(unused_ebs_dict):
 # Call Slack
 # _________________________________________________________________
 def send_message(message):
-    slack_url = "https://hooks.slack.com/services/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"
+    slack_url = "https://hooks.slack.com/services/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"
     payload_obj1 = '{"text": "%s"}' % message
     response = requests.post(slack_url, payload_obj1)
     return response.text
