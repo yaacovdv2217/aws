@@ -34,7 +34,10 @@ def get_unused_ebs(region):
     ):
         if volume.state == "available":
             volume_id = volume.id
-            volume_name = next((tag['Value'] for tag in volume.tags if tag['Key'] == 'Name'), None)
+            if volume.tags:
+                volume_name = next((tag['Value'] for tag in volume.tags if tag['Key'] == 'Name'), '<No Name Tag>')
+            else:
+                volume_name = '<No Name Tag>'
             volumes.append({'id': volume_id, 'name': volume_name})
     return volumes
 
