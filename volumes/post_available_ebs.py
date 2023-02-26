@@ -5,7 +5,7 @@ import os
 from decouple import config
 
 # Slack Webhook URL
-SLACK_URL = config("SLACK_URL")
+SLACK_URL = config("SHARED_CHANNEL")
 
 # Global Variables
 regions_dict = {}
@@ -56,8 +56,8 @@ def get_unused_ebs_all_regions():
 
 
 # Function to format the message
-def format_message(data):
-    message = "Here are the available EBS in all regions:\n"
+def format_message(profile, data):
+    message = f"Here are the available EBS in all regions for Account: {profile}:\n"
     for region, volumes in data.items():
         message += f"\nRegion: *{region}*\n"
         message += "```\n"
@@ -87,7 +87,7 @@ def main():
     profile = select_profile(boto3.session.Session().available_profiles)
     boto3.setup_default_session(profile_name=profile)
     data = get_unused_ebs_all_regions()
-    message = format_message(data)
+    message = format_message(profile, data)
     send_slack_message(message)
 
 
