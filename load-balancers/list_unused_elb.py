@@ -26,7 +26,6 @@ def select_profile(options):
 
 
 # Function to get unused ALBs in a region
-# Function to get unused ALBs in a region
 def find_unused_elbs(region):
     elb_client = boto3.client('elb', region_name=region)
     unused_elbs = []
