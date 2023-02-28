@@ -79,16 +79,15 @@ def delete_unused_ebs_all_regions(data):
 
 # Function to format the message
 def format_message(profile, data):
-    message = f"Deleted available EBS in all regions for Account: {profile}:\n"
+    message = f"_Deleted available EBS in all regions for Account: `{profile}`:_\n"
     for region, volumes in data.items():
-        message += f"\nRegion: *{region}*\n"
-        message += "```\n"
+        message += f"\n_Region: `{region}`_\n"
         for volume in volumes:
+            message += "```\n"
             message += f"Volume ID: {volume['id']}\n"
             if volume['name']:
                 message += f"Volume Name: {volume['name']}\n"
-            message += "\n"
-        message += "```\n"
+            message += "```\n"
     return message
 
 
