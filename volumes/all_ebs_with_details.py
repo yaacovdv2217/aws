@@ -23,9 +23,9 @@ def nice_format_message(unused_ebs_dictionary):
 
 
 def format_message(unused_ebs_dict):
-    message = f"*All EBS Volumes in {profile}*\n"
+    message = f"_All EBS Volumes in `{profile}`_\n"
     for region, volumes in unused_ebs_dict.items():
-        message += f"*{region}*\n"
+        message += f"_`{region}`_\n"
         for volume in volumes:
             message += f"```{volume}```\n"
     return message
