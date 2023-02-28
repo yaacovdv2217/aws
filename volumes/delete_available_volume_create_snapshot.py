@@ -103,7 +103,7 @@ def format_message(profile, data):
                 message += f"Volume Name: {volume['name']}\n"
                 snapshot_id = delete_unused_ebs(region, volume['id'])
                 if snapshot_id:
-                    message += f"Snapshot ID: {snapshot_id}\n"
+                    message += f"Snapshot ID Created: {snapshot_id}\n"
             message += "```\n"
     return message
 
