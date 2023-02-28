@@ -51,15 +51,15 @@ def get_unused_elb_all_regions():
 
 
 def format_message(profile, data):
-    message = f"Here are the ALBs that have no instances attached in all availability zones for account: `{profile}`:\n\n"
+    message = f"_Here are the ALBs that have no instances attached in all availability zones for account: `{profile}`:_\n\n"
     if not data:
         message += "No unused ALBs found in any region."
     else:
         for region, elbs in data.items():
             if not elbs:
-                message += f"`No unused ALBs found in {region}.`\n\n"
+                message += f"_`No unused ALBs found in {region}.`_\n\n"
             else:
-                message += f"`Unused ALBs in {region}:`\n"
+                message += f"_`Unused ALBs in {region}:`_\n"
                 for elb in elbs:
                     message += f"```{elb}```\n"
                 message += "\n"
